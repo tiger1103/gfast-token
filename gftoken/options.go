@@ -20,11 +20,11 @@ var (
 type OptionFunc func(*GfToken)
 
 func NewGfToken(opts ...OptionFunc) *GfToken {
-	g := &defaultGFToken
+	g := defaultGFToken
 	for _, o := range opts {
-		o(g)
+		o(&g)
 	}
-	return g
+	return &g
 }
 
 func WithServerName(value string) OptionFunc {
@@ -70,10 +70,10 @@ func WithGCache() OptionFunc {
 	}
 }
 
-func WithGRedis(redisConfig *gredis.Config) OptionFunc {
+func WithGRedis(redisConfig ...*gredis.Config) OptionFunc {
 	return func(g *GfToken) {
 		g.cache = gcache.New()
-		redis, err := gredis.New(redisConfig)
+		redis, err := gredis.New(redisConfig...)
 		if err != nil {
 			panic(err)
 		}

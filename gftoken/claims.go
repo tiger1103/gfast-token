@@ -13,9 +13,6 @@ const (
 	JwtTokenInvalid       int = -400100 //无效的token
 	JwtTokenExpired       int = -400101 //过期的token
 	JwtTokenFormatErrCode int = -400102 //提交的 token 格式错误
-
-	MY_TOKEN  = "my_token"
-	MY_CLAIMS = "my_claims"
 )
 
 type CustomClaims struct {

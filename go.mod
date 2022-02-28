@@ -1,4 +1,4 @@
-module github.com/wilgx0/gftoken
+module github.com/tiger1103/gfast-token
 
 go 1.16
 

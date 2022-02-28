@@ -11,16 +11,12 @@ import (
 	"github.com/gogf/gf/v2/database/gredis"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/wilgx0/gftoken/gftoken"
+	"github.com/tiger1103/gfast-token/gftoken"
 	"testing"
 )
 
 func TestToken(t *testing.T) {
-	t.Run("newToken", newToken)
-}
-
-func newToken(t *testing.T) {
-
+	t.Run("test", test)
 }
 
 func test(t *testing.T) {
@@ -34,6 +30,9 @@ func test(t *testing.T) {
 	gft := gftoken.NewGfToken(
 		gftoken.WithCacheKey("potato_"),
 		gftoken.WithMultiLogin(2),
+		gftoken.WithTimeout(60),
+		gftoken.WithMaxRefresh(30),
+		gftoken.WithMultiLogin(1),
 		gftoken.WithGRedis(&gredis.Config{
 			Address: "127.0.0.1:6379",
 			Db:      9,
