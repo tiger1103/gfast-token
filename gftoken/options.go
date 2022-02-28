@@ -13,7 +13,7 @@ var (
 		MaxRefresh: 60 * 60 * 24 * 5,
 		cache:      gcache.New(),
 		userJwt:    CreateMyJWT("defaultGFToken"),
-		MultiLogin: 0,
+		MultiLogin: false,
 	}
 )
 
@@ -81,8 +81,8 @@ func WithGRedis(redisConfig ...*gredis.Config) OptionFunc {
 	}
 }
 
-func WithMultiLogin(num int) OptionFunc {
+func WithMultiLogin(b bool) OptionFunc {
 	return func(g *GfToken) {
-		g.MultiLogin = num
+		g.MultiLogin = b
 	}
 }

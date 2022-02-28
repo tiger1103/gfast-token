@@ -35,19 +35,20 @@ func (m *GfToken) getRequestToken(r *ghttp.Request) (token string, err error) {
 	return
 }
 
-func (m *GfToken) GetUserInfo(r *ghttp.Request) *User {
-	UserClaims, err := m.ParseToken(m.GetToken(r))
-	if err != nil {
-		g.Log().Errorf(r.GetCtx(), "ParseToken error: %s\n", err.Error())
-		return nil
-	}
-	return &UserClaims.User
-}
-
 func (m *GfToken) GetToken(r *ghttp.Request) string {
 	token, err := m.getRequestToken(r)
 	if err != nil {
 		g.Log().Errorf(r.GetCtx(), "ParseToken error: %s\n", err.Error())
+		return ""
+	}
+	token, err = m.DecryptToken(r.GetCtx(), token)
+	if err != nil {
+		g.Log().Error(r.GetCtx(), err)
+		return ""
+	}
+	token, err = m.getCache(r.GetCtx(), token)
+	if err != nil {
+		g.Log().Error(r.GetCtx(), err)
 		return ""
 	}
 	return token

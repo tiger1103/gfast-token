@@ -3,6 +3,9 @@ package gftoken
 import (
 	"context"
 	"errors"
+	"github.com/gogf/gf/v2/crypto/gaes"
+	"github.com/gogf/gf/v2/encoding/gbase64"
+	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gcache"
 	"github.com/golang-jwt/jwt"
@@ -20,8 +23,10 @@ type GfToken struct {
 	// 处理携带token的请求时当前时间大于超时时间并小于缓存刷新时间时token将自动刷新即重置token存活时间
 	// MaxRefresh值为0时,token将不会自动刷新
 	MaxRefresh int64
-	// 多点登录时总共允许登录的token个数，默认0即不限制
-	MultiLogin int
+	// 是否允许多点登录
+	MultiLogin bool
+	// Token加密key 32位
+	EncryptKey [32]byte
 	// 缓存 (缓存模式:gcache 或 gredis)
 	cache *gcache.Cache
 	// jwt
@@ -34,9 +39,13 @@ func (m *GfToken) diedLine() time.Time {
 }
 
 // 生成token
-func (m *GfToken) GenerateToken(ctx context.Context, user User) (tokens string, err error) {
-	tokens, err = m.userJwt.CreateToken(CustomClaims{
-		user,
+func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{}) (keys string, err error) {
+	// 支持多点登录
+	if m.MultiLogin {
+
+	}
+	tokens, err := m.userJwt.CreateToken(CustomClaims{
+		data,
 		jwt.StandardClaims{
 			NotBefore: time.Now().Unix() - 10, // 生效开始时间
 			ExpiresAt: m.diedLine().Unix(),    // 失效截止时间
@@ -45,16 +54,13 @@ func (m *GfToken) GenerateToken(ctx context.Context, user User) (tokens string, 
 	if err != nil {
 		return
 	}
-	err = m.setCache(ctx, m.CacheKey+tokens, tokens)
+	keys, err = m.EncryptToken(ctx, key)
 	if err != nil {
 		return
 	}
-
-	if m.MultiLogin > 0 {
-		err = m.addUserKeyCache(ctx, m.CacheKey+user.UserKey, m.CacheKey+tokens)
-		if err != nil {
-			return
-		}
+	err = m.setCache(ctx, key, tokens)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -78,12 +84,7 @@ func (m *GfToken) IsEffective(ctx context.Context, token string) bool {
 	if cacheToken == "" {
 		return false
 	}
-
-	if m.MultiLogin > 0 && m.checkMultiLogin(ctx, token) == false {
-		return false
-	}
-
-	claims, code := m.IsNotExpired(cacheToken)
+	_, code := m.IsNotExpired(cacheToken)
 	if JwtTokenOK == code {
 		// 刷新缓存
 		if m.IsRefresh(cacheToken) {
@@ -92,48 +93,11 @@ func (m *GfToken) IsEffective(ctx context.Context, token string) bool {
 				if err != nil {
 					g.Log().Error(ctx, err)
 				}
-				err = m.UpdateExpireUserKeyCache(ctx, m.CacheKey+claims.User.UserKey)
-				if err != nil {
-					g.Log().Error(ctx, err)
-				}
-				// g.Log().Print(ctx, "token 已刷新!")
-			}
-			if err != nil {
-				g.Log().Error(ctx, err)
 			}
 		}
 		return true
 	}
 	return false
-}
-
-// 检查多点登录
-func (m *GfToken) checkMultiLogin(ctx context.Context, token string) bool {
-
-	claims, err := m.ParseToken(token)
-	if err != nil {
-		g.Log().Error(ctx, err)
-		return false
-	}
-	tokenList, err := m.getUserKeyCache(ctx, m.CacheKey+claims.User.UserKey)
-	if err != nil {
-		g.Log().Error(ctx, err)
-		return false
-	}
-	j := m.MultiLogin
-	flag := false
-	for i := len(tokenList) - 1; i >= 0; i-- {
-		if j <= 0 {
-			break
-		}
-		if tokenList[i] == m.CacheKey+token {
-			flag = true
-			break
-		}
-		j--
-	}
-
-	return flag
 }
 
 // 检查token是否过期 (过期时间 = 超时时间 + 缓存刷新时间)
@@ -172,4 +136,44 @@ func (m *GfToken) IsRefresh(token string) bool {
 		}
 	}
 	return false
+}
+
+// EncryptToken token加密方法
+func (m *GfToken) EncryptToken(ctx context.Context, key string) (encryptStr string, err error) {
+	if key == "" {
+		err = gerror.New("encrypt key empty")
+		return
+	}
+	ek := m.EncryptKey[:]
+	token, err := gaes.Encrypt([]byte(key), ek)
+	if err != nil {
+		g.Log().Error(ctx, "[GFToken]encrypt error token:", key, err)
+		err = gerror.New("encrypt error")
+		return
+	}
+	encryptStr = gbase64.EncodeToString(token)
+	return
+}
+
+// DecryptToken token解密方法
+func (m *GfToken) DecryptToken(ctx context.Context, token string) (DecryptStr string, err error) {
+	if token == "" {
+		err = gerror.New("decrypt token empty")
+		return
+	}
+	token64, err := gbase64.Decode([]byte(token))
+	if err != nil {
+		g.Log().Error(ctx, "[GFToken]decode error token:", token, err)
+		err = gerror.New("decode error")
+		return
+	}
+	ek := m.EncryptKey[:]
+	decryptToken, err := gaes.Decrypt(token64, ek)
+	if err != nil {
+		g.Log().Error(ctx, "[GFToken]decrypt error token:", token, err)
+		err = gerror.New("decrypt error")
+		return
+	}
+	DecryptStr = string(decryptToken)
+	return
 }

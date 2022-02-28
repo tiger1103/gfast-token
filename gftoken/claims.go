@@ -16,11 +16,6 @@ const (
 )
 
 type CustomClaims struct {
-	User User
+	Data interface{}
 	jwt.StandardClaims
-}
-
-type User struct {
-	UserKey string      // 用户唯一标识，必须且唯一
-	Data    interface{} // 其他需要携带的数据
 }

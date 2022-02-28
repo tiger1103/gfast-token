@@ -8,6 +8,7 @@
 package test
 
 import (
+	"github.com/gogf/gf/v2/crypto/gmd5"
 	"github.com/gogf/gf/v2/database/gredis"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
@@ -17,6 +18,11 @@ import (
 
 func TestToken(t *testing.T) {
 	t.Run("test", test)
+}
+
+type User struct {
+	UserKey string      // 用户唯一标识，必须且唯一
+	Data    interface{} // 其他需要携带的数据
 }
 
 func test(t *testing.T) {
@@ -29,10 +35,9 @@ func test(t *testing.T) {
 	*/
 	gft := gftoken.NewGfToken(
 		gftoken.WithCacheKey("potato_"),
-		gftoken.WithMultiLogin(2),
 		gftoken.WithTimeout(60),
 		gftoken.WithMaxRefresh(30),
-		gftoken.WithMultiLogin(1),
+		gftoken.WithMultiLogin(true),
 		gftoken.WithGRedis(&gredis.Config{
 			Address: "127.0.0.1:6379",
 			Db:      9,
@@ -41,7 +46,7 @@ func test(t *testing.T) {
 	s.Group("/", func(group *ghttp.RouterGroup) {
 		group.GET("/login", func(r *ghttp.Request) {
 			userId := r.GetQuery("id").String()
-			token, err := gft.GenerateToken(r.GetCtx(), gftoken.User{
+			token, err := gft.GenerateToken(r.GetCtx(), gmd5.MustEncrypt(userId), User{
 				UserKey: userId,
 				Data:    "myData",
 			})
@@ -55,8 +60,12 @@ func test(t *testing.T) {
 
 		gft.Middleware(group)
 		group.GET("/user", func(r *ghttp.Request) {
-			user := gft.GetUserInfo(r)
-			r.Response.Write(user)
+			token := gft.GetToken(r)
+			UserClaims, err := gft.ParseToken(token)
+			if err != nil {
+				g.Log().Error(r.GetCtx(), err)
+			}
+			r.Response.Write(UserClaims)
 		})
 	})
 	s.SetPort(8080)
