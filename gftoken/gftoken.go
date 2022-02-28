@@ -3,9 +3,9 @@ package gftoken
 import (
 	"context"
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gcache"
+	"github.com/golang-jwt/jwt"
 	"time"
 )
 

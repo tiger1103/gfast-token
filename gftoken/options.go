@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	defaultGFToken = &GfToken{
+	defaultGFToken = GfToken{
 		ServerName: "defaultGFToken",
 		CacheKey:   "defaultGFToken_",
 		Timeout:    60 * 60 * 24 * 10,
@@ -19,12 +19,12 @@ var (
 
 type OptionFunc func(*GfToken)
 
-func NewGfToken(opts ...OptionFunc) (g *GfToken) {
-	g = defaultGFToken
+func NewGfToken(opts ...OptionFunc) *GfToken {
+	g := &defaultGFToken
 	for _, o := range opts {
 		o(g)
 	}
-	return
+	return g
 }
 
 func WithServerName(value string) OptionFunc {

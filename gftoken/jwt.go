@@ -2,7 +2,7 @@ package gftoken
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 // 使用工厂创建一个 JWT 结构体
