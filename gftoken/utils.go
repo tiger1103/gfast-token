@@ -12,22 +12,20 @@ func (m *GfToken) getRequestToken(r *ghttp.Request) (token string, err error) {
 	if authHeader != "" {
 		parts := strings.SplitN(authHeader, " ", 2)
 		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			g.Log().Warning(r.GetCtx(), "authHeader:"+authHeader+" get token key fail")
-			err = gerror.New("get token key fail")
+			g.Log().Error(r.GetCtx(), "authHeader:"+authHeader+" get Token key fail")
+			err = gerror.New("get Token key fail")
 			return
 		} else if parts[1] == "" {
-			g.Log().Warning(r.GetCtx(), "authHeader:"+authHeader+" get token fail")
-			err = gerror.New(" get token fail")
+			g.Log().Error(r.GetCtx(), "authHeader:"+authHeader+" get Token fail")
+			err = gerror.New(" get Token fail")
 			return
 		}
 		token = parts[1]
 	} else {
-		authHeader = r.GetQuery("token").String()
+		authHeader = r.Get("token").String()
 		if authHeader == "" {
-			_ = r.Response.WriteJson(g.Map{
-				"code": 401,
-				"msg":  "query token fail",
-			})
+			g.Log().Error(r.GetCtx(), "params:"+authHeader+" get Token key fail")
+			err = gerror.New("query Token fail")
 			return
 		}
 		token = authHeader
@@ -35,21 +33,13 @@ func (m *GfToken) getRequestToken(r *ghttp.Request) (token string, err error) {
 	return
 }
 
-func (m *GfToken) GetToken(r *ghttp.Request) string {
-	token, err := m.getRequestToken(r)
+func (m *GfToken) GetToken(r *ghttp.Request) (tData *tokenData, err error) {
+	var token string
+	token, err = m.getRequestToken(r)
 	if err != nil {
 		g.Log().Errorf(r.GetCtx(), "ParseToken error: %s\n", err.Error())
-		return ""
+		return
 	}
-	token, err = m.DecryptToken(r.GetCtx(), token)
-	if err != nil {
-		g.Log().Error(r.GetCtx(), err)
-		return ""
-	}
-	token, err = m.getCache(r.GetCtx(), token)
-	if err != nil {
-		g.Log().Error(r.GetCtx(), err)
-		return ""
-	}
-	return token
+	tData, _, err = m.getTokenData(r.GetCtx(), token)
+	return
 }

@@ -18,9 +18,9 @@ func (m *GfToken) authMiddleware(r *ghttp.Request) {
 			"code": 401,
 			"msg":  err.Error(),
 		})
+		return
 	}
 	if m.IsEffective(r.GetCtx(), token) == false {
-		g.Log().Error(r.GetCtx(), "token error: token已失效!")
 		_ = r.Response.WriteJson(g.Map{
 			"code": 401,
 			"msg":  "token已失效",

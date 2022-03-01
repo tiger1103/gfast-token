@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"github.com/gogf/gf/v2/crypto/gaes"
+	"github.com/gogf/gf/v2/crypto/gmd5"
 	"github.com/gogf/gf/v2/encoding/gbase64"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gcache"
+	"github.com/gogf/gf/v2/util/grand"
 	"github.com/golang-jwt/jwt"
 	"time"
 )
@@ -33,6 +35,12 @@ type GfToken struct {
 	userJwt *JwtSign
 }
 
+//Token 数据
+type tokenData struct {
+	JwtToken string `json:"jwtToken"`
+	UuId     string `json:"uuId"`
+}
+
 // 存活时间 (存活时间 = 超时时间 + 缓存刷新时间)
 func (m *GfToken) diedLine() time.Time {
 	return time.Now().Add(time.Second * time.Duration(m.Timeout+m.MaxRefresh))
@@ -40,11 +48,23 @@ func (m *GfToken) diedLine() time.Time {
 
 // 生成token
 func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{}) (keys string, err error) {
-	// 支持多点登录
+	var (
+		uuid   string
+		tData  *tokenData
+		tokens string
+	)
+	// 支持多端重复登录，返回相同token
 	if m.MultiLogin {
-
+		tData, err = m.getCache(ctx, m.CacheKey+key)
+		if err != nil {
+			return
+		}
+		if tData != nil {
+			keys, uuid, err = m.EncryptToken(ctx, key, tData.UuId)
+			return
+		}
 	}
-	tokens, err := m.userJwt.CreateToken(CustomClaims{
+	tokens, err = m.userJwt.CreateToken(CustomClaims{
 		data,
 		jwt.StandardClaims{
 			NotBefore: time.Now().Unix() - 10, // 生效开始时间
@@ -54,11 +74,14 @@ func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{
 	if err != nil {
 		return
 	}
-	keys, err = m.EncryptToken(ctx, key)
+	keys, uuid, err = m.EncryptToken(ctx, key)
 	if err != nil {
 		return
 	}
-	err = m.setCache(ctx, key, tokens)
+	err = m.setCache(ctx, m.CacheKey+key, tokenData{
+		JwtToken: tokens,
+		UuId:     uuid,
+	})
 	if err != nil {
 		return
 	}
@@ -76,28 +99,40 @@ func (m *GfToken) ParseToken(tokenStr string) (*CustomClaims, error) {
 
 // 检查缓存的token是否有效且自动刷新缓存token
 func (m *GfToken) IsEffective(ctx context.Context, token string) bool {
-	cacheToken, err := m.getCache(ctx, m.CacheKey+token)
+	cacheToken, key, err := m.getTokenData(ctx, token)
 	if err != nil {
 		g.Log().Error(ctx, err)
 		return false
 	}
-	if cacheToken == "" {
-		return false
-	}
-	_, code := m.IsNotExpired(cacheToken)
+	_, code := m.IsNotExpired(cacheToken.JwtToken)
 	if JwtTokenOK == code {
 		// 刷新缓存
-		if m.IsRefresh(cacheToken) {
-			if newToken, err := m.RefreshToken(cacheToken); err == nil {
-				err = m.setCache(ctx, m.CacheKey+token, newToken)
+		if m.IsRefresh(cacheToken.JwtToken) {
+			if newToken, err := m.RefreshToken(cacheToken.JwtToken); err == nil {
+				cacheToken.JwtToken = newToken
+				err = m.setCache(ctx, m.CacheKey+key, cacheToken)
 				if err != nil {
 					g.Log().Error(ctx, err)
+					return false
 				}
 			}
 		}
 		return true
 	}
 	return false
+}
+
+func (m *GfToken) getTokenData(ctx context.Context, token string) (tData *tokenData, key string, err error) {
+	var uuid string
+	key, uuid, err = m.DecryptToken(ctx, token)
+	if err != nil {
+		return
+	}
+	tData, err = m.getCache(ctx, m.CacheKey+key)
+	if tData == nil || tData.UuId != uuid {
+		err = gerror.New("token is invalid")
+	}
+	return
 }
 
 // 检查token是否过期 (过期时间 = 超时时间 + 缓存刷新时间)
@@ -139,15 +174,21 @@ func (m *GfToken) IsRefresh(token string) bool {
 }
 
 // EncryptToken token加密方法
-func (m *GfToken) EncryptToken(ctx context.Context, key string) (encryptStr string, err error) {
+func (m *GfToken) EncryptToken(ctx context.Context, key string, randStr ...string) (encryptStr, uuid string, err error) {
 	if key == "" {
 		err = gerror.New("encrypt key empty")
 		return
 	}
 	ek := m.EncryptKey[:]
-	token, err := gaes.Encrypt([]byte(key), ek)
+	// 生成随机串
+	if len(randStr) > 0 {
+		uuid = randStr[0]
+	} else {
+		uuid = gmd5.MustEncrypt(grand.Letters(10))
+	}
+	token, err := gaes.Encrypt([]byte(key+uuid), ek)
 	if err != nil {
-		g.Log().Error(ctx, "[GFToken]encrypt error token:", key, err)
+		g.Log().Error(ctx, "[GFToken]encrypt error Token:", key, err)
 		err = gerror.New("encrypt error")
 		return
 	}
@@ -156,24 +197,26 @@ func (m *GfToken) EncryptToken(ctx context.Context, key string) (encryptStr stri
 }
 
 // DecryptToken token解密方法
-func (m *GfToken) DecryptToken(ctx context.Context, token string) (DecryptStr string, err error) {
+func (m *GfToken) DecryptToken(ctx context.Context, token string) (DecryptStr, uuid string, err error) {
 	if token == "" {
-		err = gerror.New("decrypt token empty")
+		err = gerror.New("decrypt Token empty")
 		return
 	}
 	token64, err := gbase64.Decode([]byte(token))
 	if err != nil {
-		g.Log().Error(ctx, "[GFToken]decode error token:", token, err)
+		g.Log().Error(ctx, "[GFToken]decode error Token:", token, err)
 		err = gerror.New("decode error")
 		return
 	}
 	ek := m.EncryptKey[:]
 	decryptToken, err := gaes.Decrypt(token64, ek)
 	if err != nil {
-		g.Log().Error(ctx, "[GFToken]decrypt error token:", token, err)
+		g.Log().Error(ctx, "[GFToken]decrypt error Token:", token, err)
 		err = gerror.New("decrypt error")
 		return
 	}
-	DecryptStr = string(decryptToken)
+	length := len(decryptToken)
+	uuid = string(decryptToken[length-32:])
+	DecryptStr = string(decryptToken[:length-32])
 	return
 }

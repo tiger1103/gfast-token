@@ -30,13 +30,13 @@ func test(t *testing.T) {
 	注意事项:
 	1、token存活时间 = 超时时间 + 缓存刷新时间
 	2、处理携带token的请求时当前时间大于超时时间并小于缓存刷新时间时token将自动刷新即重置token存活时间
-	3、每创建一个gftoken实例时CacheKey必须不相同
+	3、每创建一个gfToken实例时CacheKey必须不相同
 	4、GenerateToken函数参数的User.UserKey为用户唯一标识，必须且唯一
 	*/
 	gft := gftoken.NewGfToken(
-		gftoken.WithCacheKey("potato_"),
+		gftoken.WithCacheKey("gfToken_"),
 		gftoken.WithTimeout(60),
-		gftoken.WithMaxRefresh(30),
+		gftoken.WithMaxRefresh(50),
 		gftoken.WithMultiLogin(true),
 		gftoken.WithGRedis(&gredis.Config{
 			Address: "127.0.0.1:6379",
@@ -60,12 +60,17 @@ func test(t *testing.T) {
 
 		gft.Middleware(group)
 		group.GET("/user", func(r *ghttp.Request) {
-			token := gft.GetToken(r)
-			UserClaims, err := gft.ParseToken(token)
+			token, err := gft.GetToken(r)
 			if err != nil {
-				g.Log().Error(r.GetCtx(), err)
+				r.Response.Write(err)
+				return
 			}
-			r.Response.Write(UserClaims)
+			data, err := gft.ParseToken(token.JwtToken)
+			if err != nil {
+				r.Response.Write(err)
+				return
+			}
+			r.Response.Write(data)
 		})
 	})
 	s.SetPort(8080)

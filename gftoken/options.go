@@ -14,6 +14,7 @@ var (
 		cache:      gcache.New(),
 		userJwt:    CreateMyJWT("defaultGFToken"),
 		MultiLogin: false,
+		EncryptKey: [32]byte{'g', 'f', 'a', 's', 't', 't', 'o', 'k', 'e', 'n'},
 	}
 )
 
