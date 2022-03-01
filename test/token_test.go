@@ -37,7 +37,8 @@ func test(t *testing.T) {
 		gftoken.WithCacheKey("gfToken_"),
 		gftoken.WithTimeout(60),
 		gftoken.WithMaxRefresh(50),
-		gftoken.WithMultiLogin(true),
+		gftoken.WithMultiLogin(false),
+		gftoken.WithExcludePaths(g.SliceStr{"/excludeDemo"}),
 		gftoken.WithGRedis(&gredis.Config{
 			Address: "127.0.0.1:6379",
 			Db:      9,
@@ -71,6 +72,9 @@ func test(t *testing.T) {
 				return
 			}
 			r.Response.Write(data)
+		})
+		group.GET("/excludeDemo", func(r *ghttp.Request) {
+			r.Response.Write("Exclude path anyone can access")
 		})
 	})
 	s.SetPort(8080)

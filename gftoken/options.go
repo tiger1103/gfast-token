@@ -2,6 +2,7 @@ package gftoken
 
 import (
 	"github.com/gogf/gf/v2/database/gredis"
+	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gcache"
 )
 
@@ -14,7 +15,7 @@ var (
 		cache:      gcache.New(),
 		userJwt:    CreateMyJWT("defaultGFToken"),
 		MultiLogin: false,
-		EncryptKey: [32]byte{'g', 'f', 'a', 's', 't', 't', 'o', 'k', 'e', 'n'},
+		EncryptKey: []byte("49c54195e750b04e74a8429b17aefc77"),
 	}
 )
 
@@ -26,6 +27,18 @@ func NewGfToken(opts ...OptionFunc) *GfToken {
 		o(&g)
 	}
 	return &g
+}
+
+func WithExcludePaths(value g.SliceStr) OptionFunc {
+	return func(g *GfToken) {
+		g.ExcludePaths = value
+	}
+}
+
+func WithEncryptKey(value []byte) OptionFunc {
+	return func(g *GfToken) {
+		g.EncryptKey = value
+	}
 }
 
 func WithServerName(value string) OptionFunc {

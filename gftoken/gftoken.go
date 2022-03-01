@@ -28,9 +28,11 @@ type GfToken struct {
 	// 是否允许多点登录
 	MultiLogin bool
 	// Token加密key 32位
-	EncryptKey [32]byte
+	EncryptKey []byte
 	// 缓存 (缓存模式:gcache 或 gredis)
 	cache *gcache.Cache
+	// 拦截排除地址
+	ExcludePaths g.SliceStr
 	// jwt
 	userJwt *JwtSign
 }
@@ -179,14 +181,13 @@ func (m *GfToken) EncryptToken(ctx context.Context, key string, randStr ...strin
 		err = gerror.New("encrypt key empty")
 		return
 	}
-	ek := m.EncryptKey[:]
 	// 生成随机串
 	if len(randStr) > 0 {
 		uuid = randStr[0]
 	} else {
 		uuid = gmd5.MustEncrypt(grand.Letters(10))
 	}
-	token, err := gaes.Encrypt([]byte(key+uuid), ek)
+	token, err := gaes.Encrypt([]byte(key+uuid), m.EncryptKey)
 	if err != nil {
 		g.Log().Error(ctx, "[GFToken]encrypt error Token:", key, err)
 		err = gerror.New("encrypt error")
@@ -208,8 +209,7 @@ func (m *GfToken) DecryptToken(ctx context.Context, token string) (DecryptStr, u
 		err = gerror.New("decode error")
 		return
 	}
-	ek := m.EncryptKey[:]
-	decryptToken, err := gaes.Decrypt(token64, ek)
+	decryptToken, err := gaes.Decrypt(token64, m.EncryptKey)
 	if err != nil {
 		g.Log().Error(ctx, "[GFToken]decrypt error Token:", token, err)
 		err = gerror.New("decrypt error")
