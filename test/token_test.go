@@ -21,8 +21,8 @@ func TestToken(t *testing.T) {
 }
 
 type User struct {
-	UserKey string      // 用户唯一标识，必须且唯一
-	Data    interface{} // 其他需要携带的数据
+	UserData string      // 用户数据
+	Data     interface{} // 其他需要携带的数据
 }
 
 func test(t *testing.T) {
@@ -31,7 +31,7 @@ func test(t *testing.T) {
 	1、token存活时间 = 超时时间 + 缓存刷新时间
 	2、处理携带token的请求时当前时间大于超时时间并小于缓存刷新时间时token将自动刷新即重置token存活时间
 	3、每创建一个gfToken实例时CacheKey必须不相同
-	4、GenerateToken函数参数的User.UserKey为用户唯一标识，必须且唯一
+	4、GenerateToken函数参数的key为用户唯一标识，必须且唯一
 	*/
 	gft := gftoken.NewGfToken(
 		gftoken.WithCacheKey("gfToken_"),
@@ -48,8 +48,8 @@ func test(t *testing.T) {
 		group.GET("/login", func(r *ghttp.Request) {
 			userId := r.GetQuery("id").String()
 			token, err := gft.GenerateToken(r.GetCtx(), gmd5.MustEncrypt(userId), User{
-				UserKey: userId,
-				Data:    "myData",
+				UserData: userId,
+				Data:     "myData",
 			})
 
 			if err != nil {
