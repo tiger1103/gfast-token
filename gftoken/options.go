@@ -84,7 +84,18 @@ func WithGCache() OptionFunc {
 	}
 }
 
-func WithGRedis(redisConfig ...*gredis.Config) OptionFunc {
+func WithGRedis(redis ...*gredis.Redis) OptionFunc {
+	return func(gf *GfToken) {
+		gf.cache = gcache.New()
+		if len(redis) > 0 {
+			gf.cache.SetAdapter(gcache.NewAdapterRedis(redis[0]))
+		} else {
+			gf.cache.SetAdapter(gcache.NewAdapterRedis(g.Redis()))
+		}
+	}
+}
+
+func WithGRedisConfig(redisConfig ...*gredis.Config) OptionFunc {
 	return func(g *GfToken) {
 		g.cache = gcache.New()
 		redis, err := gredis.New(redisConfig...)
