@@ -61,12 +61,7 @@ func test(t *testing.T) {
 
 		gft.Middleware(group)
 		group.GET("/user", func(r *ghttp.Request) {
-			token, err := gft.GetToken(r)
-			if err != nil {
-				r.Response.Write(err)
-				return
-			}
-			data, err := gft.ParseToken(token.JwtToken)
+			data, err := gft.ParseToken(r)
 			if err != nil {
 				r.Response.Write(err)
 				return

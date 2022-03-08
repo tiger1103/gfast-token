@@ -8,6 +8,7 @@ import (
 	"github.com/gogf/gf/v2/encoding/gbase64"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gcache"
 	"github.com/gogf/gf/v2/util/grand"
 	"github.com/golang-jwt/jwt"
@@ -91,8 +92,12 @@ func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{
 }
 
 // 解析token (只验证格式并不验证过期)
-func (m *GfToken) ParseToken(tokenStr string) (*CustomClaims, error) {
-	if customClaims, err := m.userJwt.ParseToken(tokenStr); err == nil {
+func (m *GfToken) ParseToken(r *ghttp.Request) (*CustomClaims, error) {
+	token, err := m.GetToken(r)
+	if err != nil {
+		return nil, err
+	}
+	if customClaims, err := m.userJwt.ParseToken(token.JwtToken); err == nil {
 		return customClaims, nil
 	} else {
 		return &CustomClaims{}, errors.New(ErrorsParseTokenFail)
