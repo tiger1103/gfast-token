@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const failedCode = 401
+const FailedAuthCode = 401
 
 type AuthFailed struct {
 	Code    int    `json:"code"`
@@ -62,7 +62,7 @@ func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *AuthFailed) {
 	if err != nil {
 		b = false
 		failed = &AuthFailed{
-			Code:    failedCode,
+			Code:    FailedAuthCode,
 			Message: err.Error(),
 		}
 		return
@@ -70,7 +70,7 @@ func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *AuthFailed) {
 	if m.IsEffective(r.GetCtx(), token) == false {
 		b = false
 		failed = &AuthFailed{
-			Code:    failedCode,
+			Code:    FailedAuthCode,
 			Message: "token已失效",
 		}
 	}
