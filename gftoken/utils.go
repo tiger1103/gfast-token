@@ -52,10 +52,10 @@ func (m *GfToken) GetToken(r *ghttp.Request) (tData *tokenData, err error) {
 }
 
 func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *AuthFailed) {
+	b = true
 	urlPath := r.URL.Path
 	if !m.AuthPath(urlPath) {
 		// 如果不需要认证，继续
-		b = true
 		return
 	}
 	token, err := m.getRequestToken(r)
