@@ -64,6 +64,7 @@ func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{
 		}
 		if tData != nil {
 			keys, uuid, err = m.EncryptToken(ctx, key, tData.UuId)
+			m.doRefresh(ctx, key, tData) //刷新token
 			return
 		}
 	}
@@ -115,18 +116,23 @@ func (m *GfToken) IsEffective(ctx context.Context, token string) bool {
 	if JwtTokenOK == code {
 		// 刷新缓存
 		if m.IsRefresh(cacheToken.JwtToken) {
-			if newToken, err := m.RefreshToken(cacheToken.JwtToken); err == nil {
-				cacheToken.JwtToken = newToken
-				err = m.setCache(ctx, m.CacheKey+key, cacheToken)
-				if err != nil {
-					g.Log().Error(ctx, err)
-					return false
-				}
-			}
+			return m.doRefresh(ctx, key, cacheToken)
 		}
 		return true
 	}
 	return false
+}
+
+func (m *GfToken) doRefresh(ctx context.Context, key string, cacheToken *tokenData) bool {
+	if newToken, err := m.RefreshToken(cacheToken.JwtToken); err == nil {
+		cacheToken.JwtToken = newToken
+		err = m.setCache(ctx, m.CacheKey+key, cacheToken)
+		if err != nil {
+			g.Log().Error(ctx, err)
+			return false
+		}
+	}
+	return true
 }
 
 func (m *GfToken) getTokenData(ctx context.Context, token string) (tData *tokenData, key string, err error) {
