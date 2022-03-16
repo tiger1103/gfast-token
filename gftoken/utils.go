@@ -9,7 +9,7 @@ import (
 
 const failedCode = 401
 
-type authFailed struct {
+type AuthFailed struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
@@ -51,7 +51,7 @@ func (m *GfToken) GetToken(r *ghttp.Request) (tData *tokenData, err error) {
 	return
 }
 
-func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *authFailed) {
+func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *AuthFailed) {
 	urlPath := r.URL.Path
 	if !m.AuthPath(urlPath) {
 		// 如果不需要认证，继续
@@ -61,7 +61,7 @@ func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *authFailed) {
 	token, err := m.getRequestToken(r)
 	if err != nil {
 		b = false
-		failed = &authFailed{
+		failed = &AuthFailed{
 			Code:    failedCode,
 			Message: err.Error(),
 		}
@@ -69,7 +69,7 @@ func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *authFailed) {
 	}
 	if m.IsEffective(r.GetCtx(), token) == false {
 		b = false
-		failed = &authFailed{
+		failed = &AuthFailed{
 			Code:    failedCode,
 			Message: "token已失效",
 		}
