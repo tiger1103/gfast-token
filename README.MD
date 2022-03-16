@@ -43,7 +43,7 @@ func main() {
         gftoken.WithMaxRefresh(50),
         gftoken.WithMultiLogin(false),
         gftoken.WithExcludePaths(g.SliceStr{"/excludeDemo"}),
-        gftoken.WithGRedis(&gredis.Config{
+        gftoken.WithGRedisConfig(&gredis.Config{
             Address: "127.0.0.1:6379",
             Db:      9,
         }))
