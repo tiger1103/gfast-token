@@ -1,7 +1,6 @@
 package gftoken
 
 import (
-	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/text/gstr"
 	"strings"
@@ -14,25 +13,9 @@ func (m *GfToken) Middleware(group *ghttp.RouterGroup) error {
 }
 
 func (m *GfToken) authMiddleware(r *ghttp.Request) {
-	urlPath := r.URL.Path
-	if !m.AuthPath(urlPath) {
-		// 如果不需要认证，继续
-		r.Middleware.Next()
-		return
-	}
-	token, err := m.getRequestToken(r)
-	if err != nil {
-		_ = r.Response.WriteJson(g.Map{
-			"code": 401,
-			"msg":  err.Error(),
-		})
-		return
-	}
-	if m.IsEffective(r.GetCtx(), token) == false {
-		_ = r.Response.WriteJson(g.Map{
-			"code": 401,
-			"msg":  "token已失效",
-		})
+	b, res := m.IsLogin(r)
+	if !b {
+		r.Response.WriteJson(res)
 		return
 	}
 	r.Middleware.Next()

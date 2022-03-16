@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+const failedCode = 401
+
+type authFailed struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 func (m *GfToken) getRequestToken(r *ghttp.Request) (token string, err error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader != "" {
@@ -41,5 +48,31 @@ func (m *GfToken) GetToken(r *ghttp.Request) (tData *tokenData, err error) {
 		return
 	}
 	tData, _, err = m.getTokenData(r.GetCtx(), token)
+	return
+}
+
+func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *authFailed) {
+	urlPath := r.URL.Path
+	if !m.AuthPath(urlPath) {
+		// 如果不需要认证，继续
+		b = true
+		return
+	}
+	token, err := m.getRequestToken(r)
+	if err != nil {
+		b = false
+		failed = &authFailed{
+			Code:    failedCode,
+			Message: err.Error(),
+		}
+		return
+	}
+	if m.IsEffective(r.GetCtx(), token) == false {
+		b = false
+		failed = &authFailed{
+			Code:    failedCode,
+			Message: "token已失效",
+		}
+	}
 	return
 }
