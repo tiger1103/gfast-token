@@ -109,7 +109,7 @@ func (m *GfToken) ParseToken(r *ghttp.Request) (*CustomClaims, error) {
 func (m *GfToken) IsEffective(ctx context.Context, token string) bool {
 	cacheToken, key, err := m.getTokenData(ctx, token)
 	if err != nil {
-		g.Log().Error(ctx, err)
+		g.Log().Info(ctx, err)
 		return false
 	}
 	_, code := m.IsNotExpired(cacheToken.JwtToken)
@@ -216,13 +216,13 @@ func (m *GfToken) DecryptToken(ctx context.Context, token string) (DecryptStr, u
 	}
 	token64, err := gbase64.Decode([]byte(token))
 	if err != nil {
-		g.Log().Error(ctx, "[GFToken]decode error Token:", token, err)
+		g.Log().Info(ctx, "[GFToken]decode error Token:", token, err)
 		err = gerror.New("decode error")
 		return
 	}
 	decryptToken, err := gaes.Decrypt(token64, m.EncryptKey)
 	if err != nil {
-		g.Log().Error(ctx, "[GFToken]decrypt error Token:", token, err)
+		g.Log().Info(ctx, "[GFToken]decrypt error Token:", token, err)
 		err = gerror.New("decrypt error")
 		return
 	}
