@@ -231,3 +231,14 @@ func (m *GfToken) DecryptToken(ctx context.Context, token string) (DecryptStr, u
 	DecryptStr = string(decryptToken[:length-32])
 	return
 }
+
+// RemoveToken 删除token
+func (m *GfToken) RemoveToken(ctx context.Context, token string) (err error) {
+	var key string
+	_, key, err = m.getTokenData(ctx, token)
+	if err != nil {
+		return
+	}
+	err = m.removeCache(ctx, m.CacheKey+key)
+	return
+}

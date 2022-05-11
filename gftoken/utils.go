@@ -12,7 +12,7 @@ type AuthFailed struct {
 	Message string `json:"message"`
 }
 
-func (m *GfToken) getRequestToken(r *ghttp.Request) (token string) {
+func (m *GfToken) GetRequestToken(r *ghttp.Request) (token string) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader != "" {
 		parts := strings.SplitN(authHeader, " ", 2)
@@ -33,7 +33,7 @@ func (m *GfToken) getRequestToken(r *ghttp.Request) (token string) {
 }
 
 func (m *GfToken) GetToken(r *ghttp.Request) (tData *tokenData, err error) {
-	token := m.getRequestToken(r)
+	token := m.GetRequestToken(r)
 	tData, _, err = m.getTokenData(r.GetCtx(), token)
 	return
 }
@@ -45,7 +45,7 @@ func (m *GfToken) IsLogin(r *ghttp.Request) (b bool, failed *AuthFailed) {
 		// 如果不需要认证，继续
 		return
 	}
-	token := m.getRequestToken(r)
+	token := m.GetRequestToken(r)
 	if m.IsEffective(r.GetCtx(), token) == false {
 		b = false
 		failed = &AuthFailed{
