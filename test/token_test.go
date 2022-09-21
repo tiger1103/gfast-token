@@ -34,7 +34,7 @@ func test(t *testing.T) {
 	4、GenerateToken函数参数的key为用户唯一标识，必须且唯一
 	*/
 	gft := gftoken.NewGfToken(
-		gftoken.WithCacheKey("gfToken_"),
+		gftoken.WithCacheKey("gfToken:"),
 		gftoken.WithTimeout(60),
 		gftoken.WithMaxRefresh(50),
 		gftoken.WithMultiLogin(true),

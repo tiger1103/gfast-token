@@ -10,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gcache"
+	"github.com/gogf/gf/v2/text/gstr"
 	"github.com/gogf/gf/v2/util/grand"
 	"github.com/golang-jwt/jwt"
 	"time"
@@ -38,7 +39,7 @@ type GfToken struct {
 	userJwt *JwtSign
 }
 
-//Token 数据
+// Token 数据
 type tokenData struct {
 	JwtToken string `json:"jwtToken"`
 	UuId     string `json:"uuId"`
@@ -51,18 +52,23 @@ func (m *GfToken) diedLine() time.Time {
 
 // 生成token
 func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{}) (keys string, err error) {
+	if len(key) < 40 {
+		err = gerror.New("key length must more than 40")
+		return
+	}
 	var (
 		uuid   string
 		tData  *tokenData
 		tokens string
 	)
-	// 支持多端重复登录，返回相同token
+	// 支持多端重复登录，返回新token
 	if m.MultiLogin {
 		tData, err = m.getCache(ctx, m.CacheKey+key)
 		if err != nil {
 			return
 		}
 		if tData != nil {
+			key = gstr.SubStr(key, 0, len(key)-16) + grand.Letters(16)
 			keys, uuid, err = m.EncryptToken(ctx, key, tData.UuId)
 			m.doRefresh(ctx, key, tData) //刷新token
 			return
