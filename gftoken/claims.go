@@ -1,6 +1,6 @@
 package gftoken
 
-import "github.com/golang-jwt/jwt"
+import "github.com/golang-jwt/jwt/v4"
 
 const (
 	//token部分
@@ -17,5 +17,5 @@ const (
 
 type CustomClaims struct {
 	Data interface{}
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }

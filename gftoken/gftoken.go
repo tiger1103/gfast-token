@@ -12,7 +12,7 @@ import (
 	"github.com/gogf/gf/v2/os/gcache"
 	"github.com/gogf/gf/v2/text/gstr"
 	"github.com/gogf/gf/v2/util/grand"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"time"
 )
 
@@ -76,9 +76,9 @@ func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{
 	}
 	tokens, err = m.userJwt.CreateToken(CustomClaims{
 		data,
-		jwt.StandardClaims{
-			NotBefore: time.Now().Unix() - 10, // 生效开始时间
-			ExpiresAt: m.diedLine().Unix(),    // 失效截止时间
+		jwt.RegisteredClaims{
+			NotBefore: jwt.NewNumericDate(time.Unix(time.Now().Unix()-10, 0)), // 生效开始时间
+			ExpiresAt: jwt.NewNumericDate(m.diedLine()),                       // 失效截止时间
 		},
 	})
 	if err != nil {
@@ -157,7 +157,7 @@ func (m *GfToken) getTokenData(ctx context.Context, token string) (tData *tokenD
 // 检查token是否过期 (过期时间 = 超时时间 + 缓存刷新时间)
 func (m *GfToken) IsNotExpired(token string) (*CustomClaims, int) {
 	if customClaims, err := m.userJwt.ParseToken(token); err == nil {
-		if time.Now().Unix()-customClaims.ExpiresAt < 0 {
+		if time.Now().Unix()-customClaims.ExpiresAt.Unix() < 0 {
 			// token有效
 			return customClaims, JwtTokenOK
 		} else {
@@ -185,7 +185,7 @@ func (m *GfToken) IsRefresh(token string) bool {
 	}
 	if customClaims, err := m.userJwt.ParseToken(token); err == nil {
 		now := time.Now().Unix()
-		if now < customClaims.ExpiresAt && now > (customClaims.ExpiresAt-m.MaxRefresh) {
+		if now < customClaims.ExpiresAt.Unix() && now > (customClaims.ExpiresAt.Unix()-m.MaxRefresh) {
 			return true
 		}
 	}
