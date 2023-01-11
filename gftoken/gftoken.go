@@ -39,8 +39,8 @@ type GfToken struct {
 	userJwt *JwtSign
 }
 
-// Token 数据
-type tokenData struct {
+// TokenData Token 数据
+type TokenData struct {
 	JwtToken string `json:"jwtToken"`
 	UuId     string `json:"uuId"`
 }
@@ -58,7 +58,7 @@ func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{
 	}
 	var (
 		uuid   string
-		tData  *tokenData
+		tData  *TokenData
 		tokens string
 	)
 	// 支持多端重复登录，返回新token
@@ -88,7 +88,7 @@ func (m *GfToken) GenerateToken(ctx context.Context, key string, data interface{
 	if err != nil {
 		return
 	}
-	err = m.setCache(ctx, m.CacheKey+key, tokenData{
+	err = m.setCache(ctx, m.CacheKey+key, TokenData{
 		JwtToken: tokens,
 		UuId:     uuid,
 	})
@@ -113,7 +113,7 @@ func (m *GfToken) ParseToken(r *ghttp.Request) (*CustomClaims, error) {
 
 // 检查缓存的token是否有效且自动刷新缓存token
 func (m *GfToken) IsEffective(ctx context.Context, token string) bool {
-	cacheToken, key, err := m.getTokenData(ctx, token)
+	cacheToken, key, err := m.GetTokenData(ctx, token)
 	if err != nil {
 		g.Log().Info(ctx, err)
 		return false
@@ -129,7 +129,7 @@ func (m *GfToken) IsEffective(ctx context.Context, token string) bool {
 	return false
 }
 
-func (m *GfToken) doRefresh(ctx context.Context, key string, cacheToken *tokenData) bool {
+func (m *GfToken) doRefresh(ctx context.Context, key string, cacheToken *TokenData) bool {
 	if newToken, err := m.RefreshToken(cacheToken.JwtToken); err == nil {
 		cacheToken.JwtToken = newToken
 		err = m.setCache(ctx, m.CacheKey+key, cacheToken)
@@ -141,7 +141,7 @@ func (m *GfToken) doRefresh(ctx context.Context, key string, cacheToken *tokenDa
 	return true
 }
 
-func (m *GfToken) getTokenData(ctx context.Context, token string) (tData *tokenData, key string, err error) {
+func (m *GfToken) GetTokenData(ctx context.Context, token string) (tData *TokenData, key string, err error) {
 	var uuid string
 	key, uuid, err = m.DecryptToken(ctx, token)
 	if err != nil {
@@ -241,7 +241,7 @@ func (m *GfToken) DecryptToken(ctx context.Context, token string) (DecryptStr, u
 // RemoveToken 删除token
 func (m *GfToken) RemoveToken(ctx context.Context, token string) (err error) {
 	var key string
-	_, key, err = m.getTokenData(ctx, token)
+	_, key, err = m.GetTokenData(ctx, token)
 	if err != nil {
 		return
 	}

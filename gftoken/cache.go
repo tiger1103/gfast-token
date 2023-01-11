@@ -16,7 +16,7 @@ func (m *GfToken) setCache(ctx context.Context, key string, value interface{}) e
 	return m.cache.Set(ctx, key, value, time.Duration(m.Timeout+m.MaxRefresh)*time.Second)
 }
 
-func (m *GfToken) getCache(ctx context.Context, key string) (tData *tokenData, err error) {
+func (m *GfToken) getCache(ctx context.Context, key string) (tData *TokenData, err error) {
 	var result *gvar.Var
 	result, err = m.cache.Get(ctx, key)
 	if err != nil {

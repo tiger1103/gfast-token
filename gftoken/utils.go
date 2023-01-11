@@ -32,9 +32,9 @@ func (m *GfToken) GetRequestToken(r *ghttp.Request) (token string) {
 	return
 }
 
-func (m *GfToken) GetToken(r *ghttp.Request) (tData *tokenData, err error) {
+func (m *GfToken) GetToken(r *ghttp.Request) (tData *TokenData, err error) {
 	token := m.GetRequestToken(r)
-	tData, _, err = m.getTokenData(r.GetCtx(), token)
+	tData, _, err = m.GetTokenData(r.GetCtx(), token)
 	return
 }
 
