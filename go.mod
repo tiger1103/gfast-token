@@ -1,4 +1,4 @@
-module github.com/tiger1103/gfast-token
+module github.com/fakecore/gfast-token
 
 go 1.18
 
