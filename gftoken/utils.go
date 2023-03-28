@@ -23,7 +23,7 @@ func (m *GfToken) GetRequestToken(r *ghttp.Request) (token string) {
 		}
 		token = parts[1]
 	} else {
-		authHeader = r.Get("token").String()
+		authHeader = r.Get("Token").String()
 		if authHeader == "" {
 			return
 		}
