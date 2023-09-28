@@ -2,7 +2,7 @@ package gftoken
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"time"
 )
 
@@ -31,25 +31,12 @@ func (j *JwtSign) ParseToken(tokenString string) (*CustomClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return j.SigningKey, nil
 	})
+	if err!=nil{
+		return nil,err
+	}
 	if token == nil {
 		return nil, errors.New(ErrorsTokenInvalid)
 	}
-	if err != nil {
-		if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				return nil, errors.New(ErrorsTokenMalFormed)
-			} else if ve.Errors&jwt.ValidationErrorNotValidYet != 0 {
-				return nil, errors.New(ErrorsTokenNotActiveYet)
-			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
-				// 如果 TokenExpired ,只是过期（格式都正确），我们认为他是有效的，接下可以允许刷新操作
-				token.Valid = true
-				goto labelHere
-			} else {
-				return nil, errors.New(ErrorsTokenInvalid)
-			}
-		}
-	}
-labelHere:
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		return claims, nil
 	} else {

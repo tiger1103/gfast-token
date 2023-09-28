@@ -1,6 +1,6 @@
 package gftoken
 
-import "github.com/golang-jwt/jwt/v4"
+import "github.com/golang-jwt/jwt/v5"
 
 const (
 	//token部分

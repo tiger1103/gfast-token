@@ -36,8 +36,8 @@ func test(t *testing.T) {
 	*/
 	gft := gftoken.NewGfToken(
 		gftoken.WithCacheKey("gfToken:"),
-		gftoken.WithTimeout(60),
-		gftoken.WithMaxRefresh(50),
+		gftoken.WithTimeout(20),
+		gftoken.WithMaxRefresh(10),
 		gftoken.WithMultiLogin(true),
 		gftoken.WithExcludePaths(g.SliceStr{"/excludeDemo"}),
 		gftoken.WithGRedisConfig(&gredis.Config{
