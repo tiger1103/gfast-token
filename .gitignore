@@ -15,6 +15,7 @@ cbuild
 **/.DS_Store
 .vscode/
 .test/
+test/distDb
 main
 output/
 manifest/output/

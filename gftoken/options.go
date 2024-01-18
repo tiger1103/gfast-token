@@ -5,6 +5,7 @@ import (
 	"github.com/gogf/gf/v2/database/gredis"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gcache"
+	"github.com/tiger1103/gfast-token/adapter"
 )
 
 var (
@@ -96,6 +97,17 @@ func WithGRedis(redis ...*gredis.Redis) OptionFunc {
 	}
 }
 
+func WithDist(dist ...*adapter.Dist) OptionFunc {
+	return func(gf *GfToken) {
+		gf.cache = gcache.New()
+		if len(dist) > 0 {
+			gf.cache.SetAdapter(dist[0])
+		} else {
+			gf.cache.SetAdapter(adapter.NewDist())
+		}
+	}
+}
+
 func WithGRedisConfig(redisConfig ...*gredis.Config) OptionFunc {
 	return func(g *GfToken) {
 		g.cache = gcache.New()
@@ -104,6 +116,15 @@ func WithGRedisConfig(redisConfig ...*gredis.Config) OptionFunc {
 			panic(err)
 		}
 		g.cache.SetAdapter(gcache.NewAdapterRedis(redis))
+	}
+}
+
+func WithDistConfig(distConfig *adapter.Config) OptionFunc {
+	return func(g *GfToken) {
+		g.cache = gcache.New()
+		adapter.SetConfig(distConfig)
+		dist := adapter.New()
+		g.cache.SetAdapter(dist)
 	}
 }
 
