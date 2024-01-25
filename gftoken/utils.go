@@ -2,32 +2,33 @@ package gftoken
 
 import (
 	"github.com/gogf/gf/v2/net/ghttp"
-	"strings"
 )
 
-const FailedAuthCode = 401
+const (
+	FailedAuthCode = 401
+	BearerPrefix   = "Bearer "
+)
 
 type AuthFailed struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
+
 func (m *GfToken) GetRequestToken(r *ghttp.Request) (token string) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader != "" {
-		parts := strings.SplitN(authHeader, " ", 2)
-		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			return
-		} else if parts[1] == "" {
-			return
-		}
-		token = parts[1]
-	} else {
-		authHeader = r.Get("token").String()
-		if authHeader == "" {
-			return
-		}
-		token = authHeader
+	// 请求头获取
+	n := len(BearerPrefix)
+	auth := r.Header.Get("Authorization")
+	if len(auth) >= n && auth[:n] == BearerPrefix {
+		return auth[n:]
+	}
+	// 查询参数
+	if q := r.Get("token"); !q.IsEmpty() {
+		return q.String()
+	}
+	// Cookies
+	if c := r.Cookie.Get("token"); !c.IsEmpty() {
+		return c.String()
 	}
 	return
 }
