@@ -19,8 +19,8 @@ import (
 )
 
 func TestToken(t *testing.T) {
-	//t.Run("test", test)
-	t.Run("testDist", testDist)
+	t.Run("test", test)
+	//t.Run("testDist", testDist)
 }
 
 type User struct {
