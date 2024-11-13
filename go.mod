@@ -6,8 +6,8 @@ toolchain go1.23.0
 
 require (
 	github.com/dgraph-io/badger/v4 v4.2.0
-	github.com/gogf/gf/contrib/nosql/redis/v2 v2.7.2
-	github.com/gogf/gf/v2 v2.7.2
+	github.com/gogf/gf/contrib/nosql/redis/v2 v2.7.4
+	github.com/gogf/gf/v2 v2.7.4
 	github.com/golang-jwt/jwt/v5 v5.0.0
 )
 
