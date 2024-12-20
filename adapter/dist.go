@@ -9,6 +9,7 @@ package adapter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	badger "github.com/dgraph-io/badger/v4"
 	"github.com/gogf/gf/v2/container/gmap"
@@ -404,20 +405,18 @@ func (d *Dist) convertOptionToArgs(option interface{}) (result interface{}, err 
 		return nil, nil
 	}
 	switch reflect.TypeOf(option).Kind() {
-	case reflect.Ptr, reflect.Struct:
+	case reflect.Ptr:
+		// 解引用指针
+		elem := reflect.ValueOf(option).Elem().Interface()
+		return d.convertOptionToArgs(elem)
+	case reflect.Struct:
+		// 将结构体转换为 map
 		result = gconv.Map(option)
+		return d.convertOptionToArgs(result)
 	case reflect.Bool:
 		result = gconv.String(option)
-	case reflect.Slice, reflect.Array:
-		optionSlice := gconv.SliceAny(option)
-		var newOption = make(g.SliceAny, len(optionSlice))
-		for k, v := range optionSlice {
-			newOption[k], err = d.convertOptionToArgs(v)
-			if err != nil {
-				return
-			}
-		}
-		option = newOption
+	case reflect.Slice, reflect.Array, reflect.Map:
+		result, err = json.Marshal(option)
 	default:
 		result = option
 	}
